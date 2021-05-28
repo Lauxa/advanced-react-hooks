@@ -15,7 +15,15 @@ import {
 } from '../pokemon'
 import {useAsync} from '../utils'
 
-// 🐨 Create a PokemonCacheContext
+const PokemonCacheContext = React.createContext()
+
+function PokemonCacheProvider({children}) {
+  const [cache, dispatch] = React.useReducer(pokemonCacheReducer, {})
+
+  return(
+    <PokemonCacheContext.Provider value={[cache, dispatch]}>{children}</PokemonCacheContext.Provider>
+  )
+}
 
 // 🐨 create a PokemonCacheProvider function
 // 🐨 useReducer with pokemonCacheReducer in your PokemonCacheProvider
@@ -35,10 +43,18 @@ function pokemonCacheReducer(state, action) {
   }
 }
 
+function usePokemonCache() {
+  const context = React.useContext(PokemonCacheContext)
+
+  if (context === undefined) {
+    throw new Error('PokemonCacheContext must be used within a PokemonCacheProvider')
+  }
+
+  return context;
+}
+
 function PokemonInfo({pokemonName}) {
-  // 💣 remove the useReducer here (or move it up to your PokemonCacheProvider)
-  const [cache, dispatch] = React.useReducer(pokemonCacheReducer, {})
-  // 🐨 get the cache and dispatch from useContext with PokemonCacheContext
+const [cache, dispatch] = usePokemonCache(PokemonCacheContext)
 
   const {data: pokemon, status, error, run, setData} = useAsync()
 
@@ -55,7 +71,7 @@ function PokemonInfo({pokemonName}) {
         }),
       )
     }
-  }, [cache, pokemonName, run, setData])
+  }, [cache, dispatch, pokemonName, run, setData])
 
   if (status === 'idle') {
     return 'Submit a pokemon'
@@ -70,7 +86,7 @@ function PokemonInfo({pokemonName}) {
 
 function PreviousPokemon({onSelect}) {
   // 🐨 get the cache from useContext with PokemonCacheContext
-  const cache = {}
+  const [cache] = usePokemonCache(PokemonCacheContext)
   return (
     <div>
       Previous Pokemon
@@ -95,6 +111,7 @@ function PokemonSection({onSelect, pokemonName}) {
   // and PokemonInfo components have access to that context.
   return (
     <div style={{display: 'flex'}}>
+    <PokemonCacheProvider>
       <PreviousPokemon onSelect={onSelect} />
       <div className="pokemon-info" style={{marginLeft: 10}}>
         <PokemonErrorBoundary
@@ -104,6 +121,7 @@ function PokemonSection({onSelect, pokemonName}) {
           <PokemonInfo pokemonName={pokemonName} />
         </PokemonErrorBoundary>
       </div>
+      </PokemonCacheProvider>
     </div>
   )
 }
