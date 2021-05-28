@@ -35,8 +35,10 @@ function Counter() {
 function App() {
   return (
     <div>
+      <CountProvider>
         <CountDisplay />
         <Counter />
+      </CountProvider>
     </div>
   )
 }
